@@ -1,0 +1,8 @@
+{
+  "graphs": {
+    "Quiz Agent": "./src/quiz_agent/agent.py:quiz_agent"
+  },
+  "python_version": "3.11",
+  "env": "./.env",
+  "dependencies": ["."]
+}
