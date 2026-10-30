@@ -1,0 +1,41 @@
+[project]
+name = "quiz_agent"
+version = "0.0.1"
+description = "A study buddy agent that quizzes you on a topic and adapts to your answers."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "langgraph>=0.5.4",
+    "langchain-core>=0.3.0",
+    "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6.1", "mypy>=1.11.1"]
+
+[build-system]
+requires = ["setuptools>=73.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["quiz_agent"]
+
+[tool.setuptools.package-dir]
+"quiz_agent" = "src/quiz_agent"
+
+[tool.ruff]
+lint.select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # isort
+    "D",    # pydocstyle
+    "T201", # no print()
+    "UP",   # pyupgrade
+]
+lint.ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
