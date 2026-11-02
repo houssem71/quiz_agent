@@ -7,6 +7,9 @@ requires-python = ">=3.11,<3.13"
 dependencies = [
     "langgraph>=0.5.4",
     "langchain-core>=0.3.0",
+    "langchain>=1.0.0",
+    "langchain-anthropic>=1.0.0",
+    "pydantic>=2.0.0",
     "python-dotenv>=1.0.1",
 ]
 
