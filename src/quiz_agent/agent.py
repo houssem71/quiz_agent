@@ -9,7 +9,7 @@ from quiz_agent.state import QuizState
 def echo(state: QuizState) -> dict:
     """Reply with the user's last message, to prove the graph runs end to end."""
     last_message = state["messages"][-1]
-    return {"messages": [AIMessage(content=f"You said: {last_message.content}")]}
+    return {"messages": [AIMessage(content=f"You said: {last_message.text}")]}
 
 
 quiz_agent_builder = StateGraph(QuizState)
