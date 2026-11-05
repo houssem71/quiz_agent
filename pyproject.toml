@@ -26,6 +26,9 @@ packages = ["quiz_agent"]
 [tool.setuptools.package-dir]
 "quiz_agent" = "src/quiz_agent"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.ruff]
 lint.select = [
     "E",    # pycodestyle
