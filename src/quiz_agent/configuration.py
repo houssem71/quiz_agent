@@ -2,7 +2,7 @@
 
 import os
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
@@ -74,7 +74,7 @@ class Configuration(BaseModel):
 
     @classmethod
     def from_runnable_config(
-        cls, config: Optional[RunnableConfig] = None
+        cls, config: RunnableConfig | None = None
     ) -> "Configuration":
         """Create a Configuration instance from a RunnableConfig."""
         configurable = config.get("configurable", {}) if config else {}
