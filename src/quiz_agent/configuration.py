@@ -35,6 +35,19 @@ class Configuration(BaseModel):
             }
         },
     )
+    max_react_tool_calls: int = Field(
+        default=3,
+        metadata={
+            "x_oap_ui_config": {
+                "type": "slider",
+                "default": 3,
+                "min": 1,
+                "max": 10,
+                "step": 1,
+                "description": "Maximum number of tool calling rounds before the quiz master must reply to the user",
+            }
+        },
+    )
     # Model Configuration
     quiz_model: str = Field(
         default="anthropic:claude-haiku-5-5",
