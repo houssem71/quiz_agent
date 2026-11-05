@@ -28,14 +28,18 @@ def quiz_master(state: QuizState, config: RunnableConfig) -> Command[Literal["qu
     }
     model = configurable_model.bind_tools(QUIZ_TOOLS).with_config(model_config)
 
-    system_prompt = quiz_master_system_prompt.format(difficulty=configurable.difficulty.value)
+    # Keep the thread's first difficulty: changing the system prompt mid-conversation
+    # invalidates the thinking blocks Claude returned on earlier turns
+    difficulty = state.get("difficulty") or configurable.difficulty.value
+    system_prompt = quiz_master_system_prompt.format(difficulty=difficulty)
     messages = [SystemMessage(content=system_prompt)] + state["messages"]
     response = model.invoke(messages)
 
     # If the model asked for tools, run them; otherwise its reply goes to the user
+    update = {"messages": [response], "difficulty": difficulty}
     if response.tool_calls:
-        return Command(goto="quiz_master_tools", update={"messages": [response]})
-    return Command(goto=END, update={"messages": [response]})
+        return Command(goto="quiz_master_tools", update=update)
+    return Command(goto=END, update=update)
 
 
 def quiz_master_tools(state: QuizState, config: RunnableConfig) -> Command[Literal["quiz_master", "__end__"]]:
