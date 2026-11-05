@@ -31,3 +31,19 @@ If port 2024 is already in use, an old server is still running:
 netstat -ano | findstr :2024
 Stop-Process -Id <PID>
 ```
+
+## Check (before every commit)
+
+Tests use a fake chat model, so they make no API calls and cost nothing.
+
+```powershell
+uv run ruff check; uv run pytest
+```
+
+| Command | What it does |
+|---|---|
+| `uv run ruff check` | Lint: report bugs, style issues and outdated syntax without running the code |
+| `uv run ruff check --fix` | Automatically fix the findings marked `[*]` |
+| `uv run ruff format` | Reformat code style (spacing, quotes, line breaks) |
+| `uv run pytest` | Run all tests in `tests/` |
+| `uv run pytest -v` | Run tests and list each one with PASSED or FAILED |
