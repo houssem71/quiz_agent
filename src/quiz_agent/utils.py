@@ -67,3 +67,14 @@ def count_tool_call_rounds(messages: list[AnyMessage]) -> int:
         if isinstance(message, AIMessage) and message.tool_calls:
             rounds += 1
     return rounds
+
+
+##########################
+# Grading Helpers
+##########################
+def get_last_question(messages: list[AnyMessage]) -> str | None:
+    """Return the quiz master's last text reply before the user's latest message, or None on the first turn."""
+    for message in reversed(messages[:-1]):
+        if isinstance(message, AIMessage) and not message.tool_calls and message.text:
+            return message.text
+    return None

@@ -1,9 +1,12 @@
 """Shared pytest fixtures for the quiz agent tests."""
 
+from typing import Any
+
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.runnables import RunnableLambda
 from pydantic import Field
 
 from quiz_agent import agent, utils
@@ -11,21 +14,34 @@ from quiz_agent.configuration import Configuration
 
 
 class FakeChatModel(BaseChatModel):
-    """Chat model that returns scripted replies and records what it received, without calling an API."""
+    """Chat model that returns scripted replies and records what it received, without calling an API.
 
-    responses: list[AIMessage]
+    A scripted reply can be an AIMessage, a structured output object such as a Grade,
+    or an exception to raise (to test retries).
+    """
+
+    responses: list[Any]
     received: list[list[BaseMessage]] = Field(default_factory=list)
 
     @property
     def _llm_type(self) -> str:
         return "fake"
 
-    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+    def _next_response(self, messages):
         self.received.append(messages)
-        return ChatResult(generations=[ChatGeneration(message=self.responses.pop(0))])
+        response = self.responses.pop(0)
+        if isinstance(response, Exception):
+            raise response
+        return response
+
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        return ChatResult(generations=[ChatGeneration(message=self._next_response(messages))])
 
     def bind_tools(self, tools, **kwargs):
         return self
+
+    def with_structured_output(self, schema, **kwargs):
+        return RunnableLambda(self._next_response)
 
     def with_config(self, config=None, **kwargs):
         return self
@@ -52,7 +68,7 @@ def notes_dir(tmp_path, monkeypatch):
 def fake_model(monkeypatch):
     """Replace the agent's model with a FakeChatModel that returns the given replies in order."""
 
-    def install(*responses: AIMessage) -> FakeChatModel:
+    def install(*responses: Any) -> FakeChatModel:
         model = FakeChatModel(responses=list(responses))
         monkeypatch.setattr(agent, "configurable_model", model)
         return model

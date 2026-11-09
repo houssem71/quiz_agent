@@ -2,7 +2,12 @@
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
-from quiz_agent.utils import count_tool_call_rounds, list_notes, load_notes
+from quiz_agent.utils import (
+    count_tool_call_rounds,
+    get_last_question,
+    list_notes,
+    load_notes,
+)
 
 
 def test_list_notes_shows_only_notes_files(notes_dir):
@@ -41,3 +46,19 @@ def test_count_tool_call_rounds_counts_only_since_last_user_message():
         AIMessage(content="", tool_calls=[{**tool_call, "id": "call_2"}]),
     ]
     assert count_tool_call_rounds(messages) == 1
+
+
+def test_get_last_question_is_none_on_first_turn():
+    assert get_last_question([HumanMessage(content="hi")]) is None
+
+
+def test_get_last_question_skips_tool_calls():
+    tool_call = {"name": "list_notes", "args": {}, "id": "call_1"}
+    messages = [
+        HumanMessage(content="Quiz me on my notes"),
+        AIMessage(content="", tool_calls=[tool_call]),
+        ToolMessage(content="python_basics.md", tool_call_id="call_1"),
+        AIMessage(content="What does mutable mean?"),
+        HumanMessage(content="It can change"),
+    ]
+    assert get_last_question(messages) == "What does mutable mean?"

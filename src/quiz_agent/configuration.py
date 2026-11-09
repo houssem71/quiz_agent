@@ -48,6 +48,19 @@ class Configuration(BaseModel):
             }
         },
     )
+    # General Configuration
+    max_structured_output_retries: int = Field(
+        default=3,
+        metadata={
+            "x_oap_ui_config": {
+                "type": "number",
+                "default": 3,
+                "min": 1,
+                "max": 10,
+                "description": "Maximum number of attempts for structured output calls from models",
+            }
+        },
+    )
     # Model Configuration
     quiz_model: str = Field(
         default="anthropic:claude-haiku-5-5",
