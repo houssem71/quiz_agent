@@ -19,11 +19,15 @@ uv sync --extra dev
 
 ```powershell
 cd "C:\Users\Administrator\Desktop\personal projects\quiz_agent"
-uv run langgraph dev
+uv run python -m langgraph_cli dev
 ```
 
 Studio opens in the browser (API at http://127.0.0.1:2024). Stop the server with Ctrl+C.
 No activation is needed: `uv run` uses `.venv` automatically.
+
+We run the CLI through `python -m` because Windows Smart App Control blocks the generated
+`.venv\Scripts\langgraph.exe` launcher (os error 4551). The signed python.org Python is allowed.
+On a machine without that block, `uv run langgraph dev` does the same thing.
 
 If port 2024 is already in use, an old server is still running:
 
