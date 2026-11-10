@@ -5,10 +5,15 @@ from pathlib import Path
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool, tool
+from langgraph.store.base import BaseStore
+
+from quiz_agent.state import Grade
 
 NOTES_DIR = Path("notes")
 ALLOWED_NOTE_SUFFIXES = {".md", ".txt"}
 MAX_NOTES_CHARS = 20000
+MAX_HISTORY_TOPICS = 5
+NO_HISTORY = "No quiz history yet."
 
 
 ##########################
@@ -78,3 +83,43 @@ def get_last_question(messages: list[AnyMessage]) -> str | None:
         if isinstance(message, AIMessage) and not message.tool_calls and message.text:
             return message.text
     return None
+
+
+##########################
+# Long-Term Memory Helpers
+##########################
+def quiz_results_namespace(user_id: str) -> tuple[str, ...]:
+    """Store namespace for one user's quiz results; the user id comes first so users never share memory."""
+    return (user_id, "quiz_results")
+
+
+def save_quiz_result(store: BaseStore | None, user_id: str, grade: Grade) -> None:
+    """Add a graded answer to the user's per-topic stats in the long-term store."""
+    if store is None:
+        return
+    namespace = quiz_results_namespace(user_id)
+    key = grade.topic.strip().lower()
+    item = store.get(namespace, key)
+    stats = item.value if item else {"topic": grade.topic, "answered": 0, "correct": 0}
+    store.put(
+        namespace,
+        key,
+        {
+            "topic": stats["topic"],
+            "answered": stats["answered"] + 1,
+            "correct": stats["correct"] + int(grade.is_correct),
+        },
+    )
+
+
+def load_learner_history(store: BaseStore | None, user_id: str) -> str:
+    """Summarize the user's quiz results from the long-term store, weakest topics first."""
+    if store is None:
+        return NO_HISTORY
+    items = store.search(quiz_results_namespace(user_id), limit=100)
+    if not items:
+        return NO_HISTORY
+    stats = sorted((item.value for item in items), key=lambda s: s["correct"] / s["answered"])
+    return "\n".join(
+        f"- {s['topic']}: {s['correct']}/{s['answered']} correct" for s in stats[:MAX_HISTORY_TOPICS]
+    )

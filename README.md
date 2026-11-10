@@ -41,7 +41,7 @@ Stop-Process -Id <PID>
 Tests use a fake chat model, so they make no API calls and cost nothing.
 
 ```powershell
-uv run ruff check; uv run pytest
+uv run ruff check; uv run python -m pytest
 ```
 
 | Command | What it does |
@@ -49,5 +49,8 @@ uv run ruff check; uv run pytest
 | `uv run ruff check` | Lint: report bugs, style issues and outdated syntax without running the code |
 | `uv run ruff check --fix` | Automatically fix the findings marked `[*]` |
 | `uv run ruff format` | Reformat code style (spacing, quotes, line breaks) |
-| `uv run pytest` | Run all tests in `tests/` |
-| `uv run pytest -v` | Run tests and list each one with PASSED or FAILED |
+| `uv run python -m pytest` | Run all tests in `tests/` |
+| `uv run python -m pytest -v` | Run tests and list each one with PASSED or FAILED |
+
+Like the server, pytest runs through `python -m` because Smart App Control blocks the
+`.venv\Scripts\pytest.exe` launcher. If `ruff` is ever blocked too, use `uv run python -m ruff check`.

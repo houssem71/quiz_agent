@@ -39,6 +39,7 @@ class QuizState(MessagesState):
 
     # Locked in on the thread's first turn so the system prompt never changes mid-conversation
     difficulty: NotRequired[str]
+    learner_history: NotRequired[str]
     # Score for the thread, updated by the grader after each answer
     answered: NotRequired[int]
     correct: NotRequired[int]

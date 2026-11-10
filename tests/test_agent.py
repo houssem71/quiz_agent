@@ -2,9 +2,11 @@
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.store.memory import InMemoryStore
 
 from quiz_agent.agent import quiz_agent, quiz_agent_builder
 from quiz_agent.state import Grade
+from quiz_agent.utils import save_quiz_result
 
 LIST_NOTES_CALL = {"name": "list_notes", "args": {}, "id": "call_1"}
 CORRECT_GRADE = Grade(is_answer=True, is_correct=True, topic="Python lists", feedback="Mutable means it can change.")
@@ -134,3 +136,26 @@ def test_grader_retries_after_a_failure(fake_model):
 
     assert len(model.received) == 3
     assert result["correct"] == 1
+
+
+def test_graded_answer_is_saved_to_long_term_memory(fake_model):
+    store = InMemoryStore()
+    fake_model(CORRECT_GRADE, AIMessage(content="Correct! Next question?"))
+    graph = quiz_agent_builder.compile(store=store)
+
+    graph.invoke(answer_turn("It can be changed after creation"))
+
+    item = store.get(("default_user", "quiz_results"), "python lists")
+    assert item.value == {"topic": "Python lists", "answered": 1, "correct": 1}
+
+
+def test_new_thread_starts_with_learner_history(fake_model):
+    store = InMemoryStore()
+    save_quiz_result(store, "default_user", WRONG_GRADE)
+    model = fake_model(AIMessage(content="Want to practise Python lists again?"))
+    graph = quiz_agent_builder.compile(store=store)
+
+    result = graph.invoke({"messages": [HumanMessage(content="hi")]})
+
+    assert "- Python lists: 0/1 correct" in model.received[0][0].content
+    assert result["learner_history"] == "- Python lists: 0/1 correct"

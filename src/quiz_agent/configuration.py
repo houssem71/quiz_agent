@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any
 
 from langchain_core.runnables import RunnableConfig
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class Difficulty(Enum):
@@ -48,6 +48,17 @@ class Configuration(BaseModel):
             }
         },
     )
+    # Memory Configuration
+    user_id: str = Field(
+        default="default_user",
+        metadata={
+            "x_oap_ui_config": {
+                "type": "text",
+                "default": "default_user",
+                "description": "Whose long-term quiz history to read and update; each user has their own memory",
+            }
+        },
+    )
     # General Configuration
     max_structured_output_retries: int = Field(
         default=3,
@@ -84,6 +95,14 @@ class Configuration(BaseModel):
             }
         },
     )
+
+    @field_validator("user_id", mode="before")
+    @classmethod
+    def use_default_for_blank_user_id(cls, value: Any) -> Any:
+        """Fall back to the default user when the id is blank, e.g. an empty Studio text field."""
+        if isinstance(value, str) and not value.strip():
+            return cls.model_fields["user_id"].default
+        return value
 
     @classmethod
     def from_runnable_config(

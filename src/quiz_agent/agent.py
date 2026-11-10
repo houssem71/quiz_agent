@@ -5,6 +5,7 @@ from typing import Literal
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
+from langgraph.config import get_store
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command
 
@@ -20,6 +21,8 @@ from quiz_agent.utils import (
     count_tool_call_rounds,
     execute_tool_safely,
     get_last_question,
+    load_learner_history,
+    save_quiz_result,
 )
 
 # Initialize a configurable model; the actual model is chosen per call from Configuration
@@ -53,6 +56,9 @@ def grade_answer(state: QuizState, config: RunnableConfig) -> Command[Literal["q
     if not grade.is_answer:
         return Command(goto="quiz_master")
 
+    # Long-term memory: the store outlives this thread, the score below does not
+    save_quiz_result(get_store(), configurable.user_id, grade)
+
     answered = state.get("answered", 0) + 1
     correct = state.get("correct", 0) + int(grade.is_correct)
     # Store the grade as a message so the quiz master's conversation stays append-only
@@ -84,12 +90,14 @@ def quiz_master(state: QuizState, config: RunnableConfig) -> Command[Literal["qu
     # Keep the thread's first difficulty: changing the system prompt mid-conversation
     # invalidates the thinking blocks Claude returned on earlier turns
     difficulty = state.get("difficulty") or configurable.difficulty.value
-    system_prompt = quiz_master_system_prompt.format(difficulty=difficulty)
+    # Read long-term memory once per thread, for the same reason
+    learner_history = state.get("learner_history") or load_learner_history(get_store(), configurable.user_id)
+    system_prompt = quiz_master_system_prompt.format(difficulty=difficulty, learner_history=learner_history)
     messages = [SystemMessage(content=system_prompt)] + state["messages"]
     response = model.invoke(messages)
 
     # If the model asked for tools, run them; otherwise its reply goes to the user
-    update = {"messages": [response], "difficulty": difficulty}
+    update = {"messages": [response], "difficulty": difficulty, "learner_history": learner_history}
     if response.tool_calls:
         return Command(goto="quiz_master_tools", update=update)
     return Command(goto=END, update=update)
