@@ -36,6 +36,21 @@ netstat -ano | findstr :2024
 Stop-Process -Id <PID>
 ```
 
+## Chat in the browser (Streamlit)
+
+A small frontend in `frontend/app.py` talks to the running server through the LangGraph API.
+Install its extra once (list every extra you want, because `uv sync` removes the ones you leave out):
+
+```powershell
+uv sync --extra dev --extra ui
+```
+
+Then, with the server running in another terminal:
+
+```powershell
+uv run python -m streamlit run frontend/app.py
+```
+
 ## Check (before every commit)
 
 Tests use a fake chat model, so they make no API calls and cost nothing.
